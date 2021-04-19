@@ -3,6 +3,7 @@ import React from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Alert, ImageBackground, Modal, TouchableHighlight } from 'react-native'
 import { Camera } from 'expo-camera'
 import DropDownPicker from 'react-native-dropdown-picker';
+import * as FileSystem from 'expo-file-system';
 
 export default function App() {
   const [startCamera, setStartCamera] = React.useState(false)
@@ -24,24 +25,66 @@ export default function App() {
   }
   const __takePicture = async () => {
     const photo = await camera.takePictureAsync()
-    console.log(photo)
     setPreviewVisible(true)
     //setStartCamera(false)
     setCapturedImage(photo)
   }
   const __savePhoto = async () => {
-    const settings = {
-      method: 'POST',
-      headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
 
+    await fetch(`https://api-marijuana.herokuapp.com/user-photos`, {
+      method: "POST",
+      body: JSON.stringify({
+        "status": "pending",
+        "published_at": "2021-04-19T01:30:56.965Z",
+        "created_by": "string",
+        "updated_by": "string"
       })
-    };
-    const res = await fetch('aaa',settings);
-    return res.json();
+    })
+      .then(async (res) => {
+        if (res.status !== 200) {
+          console.error("request distinto de 200")
+          alert("No se pudo enviar la publicacion. Intente nuevamente mas tarde.");
+        } else {
+
+          let data = await res.json();
+          console.log(capturedImage);
+          const form = new FormData();
+
+          console.log("photo");
+          let imgBlob = await (await fetch(capturedImage.uri)).blob()
+          
+          form.append('files', imgBlob,"4B24A11C-5B65-40F4-A55D-0F7067AF2A32");
+          form.append('ref', 'user-photos');
+          form.append("source","users-permissions");
+          form.append('refId', data._id);
+          form.append('field', 'media');
+
+          await fetch(`https://api-marijuana.herokuapp.com/upload`, {
+            method: "POST",
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'multipart/form-data',
+            },
+            body: form
+          })
+            .then(async (res) => {
+              if (res.status !== 200) {
+                var data = await res.json();
+                console.log(data);
+                console.log("hola")
+                alert("No se pudo subir correctamene las imagenes. Intente nuevamente mas tarde.");
+              }
+            })
+        }
+      })
+      .catch(async (err) => {
+        console.log(`Fallo en enviar info \n`, err)
+        alert("Se produjo el siguiente error tecnico: " + err);
+      });
+
+    alert("Imagen subida")
+
+
 
   }
   const __retakePicture = () => {
@@ -239,7 +282,7 @@ const CameraPreview = ({ photo, retakePicture, savePhoto, problem, setProblem })
           flex: 1
         }}
       >
-       
+
         <View
           style={{
             flex: 1,
@@ -248,33 +291,33 @@ const CameraPreview = ({ photo, retakePicture, savePhoto, problem, setProblem })
             justifyContent: 'flex-end'
           }}
         >
-           <View
-          style={{
-            flexDirection: 'column',
-            padding: 15,
-            width: '100%',
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#fff'
-          }}
-        >
-          <DropDownPicker
-            placeholder="Seleccione un sintoma"
-            items={[
-              { label: 'Ojita verde', value: 'not bad'},
-              { label: 'Roja', value: 'very bad'},
-              { label: 'Muerte', value: 'bad' },
-            ]}
-            defaultValue={problem}
-            containerStyle={{ width: 200,height: 40 }}
-            style={{ backgroundColor: '#fafafa' }}
-            itemStyle={{
-              justifyContent: 'flex-start'
+          <View
+            style={{
+              flexDirection: 'column',
+              padding: 15,
+              width: '100%',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#fff'
             }}
-            dropDownStyle={{ backgroundColor: '#fafafa' }}
-            onChangeItem={item => handleProblem(item.value)}
-          />
-        </View>
+          >
+            <DropDownPicker
+              placeholder="Seleccione un sintoma"
+              items={[
+                { label: 'Ojita verde', value: 'not bad' },
+                { label: 'Roja', value: 'very bad' },
+                { label: 'Muerte', value: 'bad' },
+              ]}
+              defaultValue={problem}
+              containerStyle={{ width: 200, height: 40 }}
+              style={{ backgroundColor: '#fafafa' }}
+              itemStyle={{
+                justifyContent: 'flex-start'
+              }}
+              dropDownStyle={{ backgroundColor: '#fafafa' }}
+              onChangeItem={item => handleProblem(item.value)}
+            />
+          </View>
           <View
             style={{
               flexDirection: 'row',

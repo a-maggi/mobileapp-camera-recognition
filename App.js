@@ -1,9 +1,9 @@
 import { StatusBar } from 'expo-status-bar'
 import React from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, Alert, ImageBackground, Modal, TouchableHighlight } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, Alert, ImageBackground } from 'react-native'
 import { Camera } from 'expo-camera'
 import DropDownPicker from 'react-native-dropdown-picker';
-import * as FileSystem from 'expo-file-system';
+import FormData from 'form-data';
 
 export default function App() {
   const [startCamera, setStartCamera] = React.useState(false)
@@ -11,7 +11,6 @@ export default function App() {
   const [capturedImage, setCapturedImage] = React.useState(false)
   const [cameraType, setCameraType] = React.useState(Camera.Constants.Type.back)
   const [flashMode, setFlashMode] = React.useState('off')
-  const [modalVisible, setModalVisible] = React.useState(false);
   const [problem, setProblem] = React.useState(false);
 
   const __startCamera = async () => {
@@ -42,23 +41,20 @@ export default function App() {
     })
       .then(async (res) => {
         if (res.status !== 200) {
-          console.error("request distinto de 200")
-          alert("No se pudo enviar la publicacion. Intente nuevamente mas tarde.");
+          alert("Se produjo un error, intente mas tarde.")
+          console.error("request distinto de 200 para post de publicacion "+res.status)
+          return;
         } else {
 
           let data = await res.json();
-          console.log(capturedImage);
-          const form = new FormData();
-
-          console.log("photo");
-          let imgBlob = await (await fetch(capturedImage.uri)).blob()
-          
-          form.append('files', imgBlob,"4B24A11C-5B65-40F4-A55D-0F7067AF2A32");
-          form.append('ref', 'user-photos');
-          form.append("source","users-permissions");
+          var form = new FormData();
+          let uri = capturedImage.uri
+    
+          form.append('files', {
+            uri, name: 'image.jpg', type: 'image/jpeg'
+          });
           form.append('refId', data._id);
           form.append('field', 'media');
-
           await fetch(`https://api-marijuana.herokuapp.com/upload`, {
             method: "POST",
             headers: {
@@ -69,11 +65,10 @@ export default function App() {
           })
             .then(async (res) => {
               if (res.status !== 200) {
-                var data = await res.json();
-                console.log(data);
-                console.log("hola")
                 alert("No se pudo subir correctamene las imagenes. Intente nuevamente mas tarde.");
               }
+              alert("Imagen subida")
+              setPreviewVisible(false)
             })
         }
       })
@@ -81,11 +76,6 @@ export default function App() {
         console.log(`Fallo en enviar info \n`, err)
         alert("Se produjo el siguiente error tecnico: " + err);
       });
-
-    alert("Imagen subida")
-
-
-
   }
   const __retakePicture = () => {
     setCapturedImage(null)

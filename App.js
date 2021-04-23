@@ -30,14 +30,9 @@ export default function App() {
   }
   const __savePhoto = async () => {
 
-    await fetch(`https://api-marijuana.herokuapp.com/user-photos`, {
+    await fetch(`https://api-marijuana.cr.itopps.com.ar/photos`, {
       method: "POST",
-      body: JSON.stringify({
-        "status": "pending",
-        "published_at": "2021-04-19T01:30:56.965Z",
-        "created_by": "string",
-        "updated_by": "string"
-      })
+      body: JSON.stringify({})
     })
       .then(async (res) => {
         if (res.status !== 200) {
@@ -53,9 +48,13 @@ export default function App() {
           form.append('files', {
             uri, name: 'image.jpg', type: 'image/jpeg'
           });
+          form.append('ref', 'photo');
           form.append('refId', data._id);
           form.append('field', 'media');
-          await fetch(`https://api-marijuana.herokuapp.com/upload`, {
+
+          console.log('form', form);
+
+          await fetch(`https://api-marijuana.cr.itopps.com.ar/upload`, {
             method: "POST",
             headers: {
               Accept: 'application/json',
@@ -139,7 +138,7 @@ export default function App() {
                     onPress={__handleFlashMode}
                     style={{
                       backgroundColor: flashMode === 'off' ? '#000' : '#fff',
-                      borderRadius: '50%',
+                      borderRadius: 50,
                       height: 25,
                       width: 25
                     }}
@@ -156,7 +155,7 @@ export default function App() {
                     onPress={__switchCamera}
                     style={{
                       marginTop: 20,
-                      borderRadius: '50%',
+                      borderRadius: 50,
                       height: 25,
                       width: 25
                     }}
